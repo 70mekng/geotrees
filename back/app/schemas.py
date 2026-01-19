@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class NoteResponse(BaseModel):
-    id: str
+    id: int
     notepad_id: str
     image_url: str | None = None
     ocr: str | None = None

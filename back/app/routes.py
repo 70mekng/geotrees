@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Annotated
 
@@ -11,32 +11,61 @@ DB = Annotated[Session, Depends(get_db)]
 # Note
 @router.post("/notepad/{notepad_id}/note", response_model=schemas.NoteResponse)
 def create_note(notepad_id: str, data: schemas.NoteCreate, db: DB):
-    # TODO
-    pass
+    notepad = db.query(models.Notepad).filter(models.Notepad.id == notepad_id).first()
+    if not notepad:
+        raise HTTPException(status_code=404, detail="Notepad not found")
+
+    note = models.Note(
+        notepad_id=notepad_id,
+        image_url=data.image_url,
+        ocr=data.ocr,
+        memo=data.memo,
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
 
 
 @router.patch("/note/{note_id}", response_model=schemas.NoteResponse)
-def update_note(note_id: str, data: schemas.NoteUpdate, db: DB):
-    # TODO
-    pass
+def update_note(note_id: int, data: schemas.NoteUpdate, db: DB):
+    note = db.query(models.Note).filter(models.Note.id == note_id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    note.image_url = data.image_url
+    note.ocr = data.ocr
+    note.memo = data.memo
+    note.analysis = data.analysis
+    db.commit()
+    db.refresh(note)
+    return note
 
 
 @router.delete("/note/{note_id}")
-def delete_note(note_id: str, db: DB):
-    # TODO
-    pass
+def delete_note(note_id: int, db: DB):
+    note = db.query(models.Note).filter(models.Note.id == note_id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    db.delete(note)
+    db.commit()
+    return {"message": f"Note {note_id} deleted successfully"}
 
 # Notepad
 @router.post("/notepad", response_model=schemas.NotepadResponse)
 def create_notepad(db: DB):
-    # TODO
-    pass
-
+    notepad = models.Notepad()
+    db.add(notepad)
+    db.commit()
+    db.refresh(notepad)
+    return notepad
 
 @router.get("/notepad/{notepad_id}", response_model=schemas.NotepadResponse)
 def get_notepad(notepad_id: str, db: DB):
-    # TODO
-    pass
+    notepad = db.query(models.Notepad).filter(models.Notepad.id == notepad_id).first()
+    if not notepad:
+        raise HTTPException(status_code=404, detail="Notepad not found")
+    return notepad
 
 
 @router.post("/notepad/{notepad_id}/analyze", response_model=schemas.AnalyzeResponse)
