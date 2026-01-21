@@ -36,6 +36,7 @@ class NotepadResponse(BaseModel):
 
 # functions
 class UploadResponse(BaseModel):
+    upload_url: str
     image_url: str
 
 class OcrRequest(BaseModel):

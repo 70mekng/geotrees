@@ -8,7 +8,7 @@ const router = createRouter({
       redirect: '/notepad',
     },
     {
-      path: '/notepad',
+      path: '/notepad/:notepadId?',
       name: 'notepad',
       component: () => import('../views/Notepad.vue'),
     },

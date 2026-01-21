@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Annotated
 
-from .database import get_db
 from . import schemas, models
+from .database import get_db
+from .services.imgUpload import create_presigned_url
 
 router = APIRouter()
 DB = Annotated[Session, Depends(get_db)]
@@ -60,12 +61,43 @@ def create_notepad(db: DB):
     db.refresh(notepad)
     return notepad
 
+@router.delete("/notepad")
+def delete_empty_notepad(db: DB):
+    subquery = db.query(models.Note.notepad_id).distinct()
+    
+    empty_notepads = (
+        db.query(models.Notepad)
+        .filter(~models.Notepad.id.in_(subquery))
+        .all()
+    )
+    if not empty_notepads:
+        return {"message": "No empty notepads found"}
+
+    for notepad in empty_notepads:
+        db.delete(notepad)
+    
+    db.commit()
+    
+    return {"message": f"Deleted {len(empty_notepads)} empty notepads."}
+
+
 @router.get("/notepad/{notepad_id}", response_model=schemas.NotepadResponse)
 def get_notepad(notepad_id: str, db: DB):
     notepad = db.query(models.Notepad).filter(models.Notepad.id == notepad_id).first()
     if not notepad:
         raise HTTPException(status_code=404, detail="Notepad not found")
+
+    notepad.notes = db.query(models.Note).filter(models.Note.notepad_id == notepad_id).all()
     return notepad
+
+@router.delete("/notepad/{notepad_id}")
+def delete_notepad(notepad_id: str, db: DB):
+    notepad = db.query(models.Notepad).filter(models.Notepad.id == notepad_id).first()
+    if not notepad:
+        raise HTTPException(status_code=404, detail="Notepad not found")
+    db.delete(notepad)
+    db.commit()
+    return {"message": f"Notepad {notepad_id} deleted successfully"}
 
 
 @router.post("/notepad/{notepad_id}/analyze", response_model=schemas.AnalyzeResponse)
@@ -75,9 +107,9 @@ def analyze_notepad(notepad_id: str, db: DB):
 
 # Functions
 @router.post("/upload", response_model=schemas.UploadResponse)
-def upload_image():
-    # TODO
-    pass
+def upload_image(extension: str):
+    upload_url, image_url = create_presigned_url(extension)
+    return schemas.UploadResponse(upload_url=upload_url, image_url=image_url)
 
 
 @router.post("/ocr", response_model=schemas.OcrResponse)
