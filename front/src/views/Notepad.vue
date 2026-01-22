@@ -4,39 +4,80 @@
     <div class="card-info">
 
       <div class="info-img">
-        <h3>Screenshot</h3>
+        <div class="info-section-title">
+          <h3>Screenshot</h3>
+        </div>
         <div class="upload-img">
-          <img v-if="currentNote.image_url" :src="currentNote.image_url" class="img-area" alt="note image">
-          <div v-else tabindex="0" @focus="isUploadSelected = true" @blur="isUploadSelected = false" @paste="pasteImage"
+          <img 
+            v-if="currentNote.image_url" 
+            :src="currentNote.image_url" 
+            class="img-area" 
+            alt="note image"
+            @click="isImgZoom = true"
+          >
+          <div 
+            v-else 
+            tabindex="0" 
+            @focus="isUploadSelected = true" 
+            @blur="isUploadSelected = false" 
+            @paste="pasteImage"
             class="upload-area">
-            <span v-if="!isUploadSelected">Click to enable upload by paste</span>
-            <span v-else>Paste or select file</span>
-            <input ref="fileInput" type="file" accept="image/png, image/jpeg, image/jpg, image/webp"
-              @change="uploadImage" />
+              <span v-if="!isUploadSelected">Click to enable upload by paste</span>
+              <span v-else>Paste or select file</span>
+              <input 
+                ref="fileInput"  
+                type="file" 
+                accept="image/png, image/jpeg, image/jpg, image/webp"
+                @change="uploadImage" />
           </div>
 
         </div>
       </div>
 
       <div class="info-ocr">
-        <h3>OCR</h3>
-        {{ currentNote.ocr }}
+        <div class="info-section-title">
+          <h3>OCR</h3>
+          <button 
+            @click="ocrImage"
+            :disabled="!currentNote.image_url">
+            <img class="button-icon" src="../assets/icons/ocr.svg" alt="ocr">
+            <span class="button-text">Click to OCR</span>
+          </button>
+        </div>
+        <textarea 
+          v-if="currentNote.ocr"
+          v-model="currentNote.ocr"
+          placeholder="Click on analyze button to get OCR. And you can edit the OCR text.">
+        </textarea>
       </div>
 
 
       <div class="info-memo">
-        <h3>Memo</h3>
+        <div class="info-section-title">
+          <h3>Memo</h3>
+        </div>
         <textarea 
           v-model="currentNote.memo"
-          placeholder="Enter your memo"
-
-          >
+          placeholder="Enter your memo">
         </textarea>
       </div>
 
       <div class="info-analysis">
-        <h3>AI Analysis</h3>
-        {{ currentNote.analysis }}
+        <div class="info-section-title">
+          <h3>AI Analysis</h3>
+          <button 
+            @click="analyzeNote"
+            :disabled="!currentNote.ocr">
+            <img class="button-icon" src="../assets/icons/analyze.svg" alt="analyze">
+            <span class="button-text">Click to analyze</span>
+          </button>
+        </div>
+        <textarea 
+          v-model="currentNote.analysis"
+          v-if="currentNote.analysis"
+          disabled
+          placeholder="Click on analyze button to get analysis">
+        </textarea>
       </div>
     </div>
 
@@ -67,6 +108,12 @@
       </div>
     </div>
 
+    <div 
+      v-if="isImgZoom"
+      class="img-zoom"
+      @click="isImgZoom = false">
+      <img :src="currentNote.image_url" alt="note image">
+    </div>
   </div>
 </template>
 
@@ -94,6 +141,7 @@ const currentNote = ref<Note>({
 });
 const originalNote = ref<Note | null>(null);
 const isUploadSelected = ref(false);
+const isImgZoom = ref(false);
 const isDirty = computed(() => {
   if (!currentNote.value) return false;
 
@@ -108,14 +156,12 @@ const isDirty = computed(() => {
   );
 });
 
-
 const route = useRoute();
 const router = useRouter();
 let notepadId = route.params.notepadId as string | null;
 if (!notepadId) {
   notepadId = '';
 }
-
 const toast = useToast();
 
 async function loadNotepad() {
@@ -238,8 +284,14 @@ async function uploadImage(e: Event) {
   currentNote.value.image_url = imageUrl;
 }
 
-async function processOCR(imageUrl: string) {
-  // TODO
+async function ocrImage() {
+  if (!currentNote.value?.image_url) {
+    console.error('image_url is null');
+    toast.error('Image is not uploaded');
+    return;
+  }
+  const data = await api.ocr(currentNote.value.image_url);
+  currentNote.value.ocr = data.ocr;
 }
 
 async function analyzeNote(data: object) {
@@ -263,10 +315,15 @@ onMounted(() => {
 
   .card-info {
     background-color: #ebd7c7;
-
     display: flex;
     flex-direction: column;
     gap: 15px;
+
+    height: 100%;
+    width: 30%;
+    min-width: 500px;
+    padding: 20px 30px;
+    overflow-y: auto;
 
     box-shadow:
       0px 0 4px 4px #551601c8,
@@ -275,26 +332,7 @@ onMounted(() => {
       rgba(0, 0, 0, 0.3) 0px 30px 20px -30px,
       rgba(64, 43, 10, 0.35) 0px 0px 6px 0px inset;
 
-
-    height: 100%;
-    width: 500px;
-    padding: 20px 40px;
-
-    overflow-y: auto;
-
-    h3 {
-      // font-family: 'Baloo Bhaijaan 2', cursive;
-      // margin: 0;
-      margin-bottom: 5px;
-      font-family: 'Lexend Deca', sans-serif;
-      font-size: 24px;
-      font-weight: 600;
-      // font-style: italic;
-      color: #333;
-    }
-
     .info-img {
-      width: 100%;
       flex-shrink: 0;
 
       .upload-img {
@@ -336,33 +374,128 @@ onMounted(() => {
       }
     }
 
+    .info-ocr {
+      textarea {
+        min-height: 100px;
+      }
+    }
+
     .info-memo {
-      width: 100%;
 
       textarea {
-        background-color: #F4EBD3;
+        min-height: 100px;
+      }
+    }
+
+    .info-analysis {
+      textarea {
+        min-height: 200px;
+      }
+    }
+
+    .info-img, .info-ocr, .info-memo, .info-analysis {
+      width: 100%;
+
+      .info-section-title {
+        // background-color: #773c00;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 10px 0;
+
+        h3 {
+          color: #333;
+          
+          font-family: 'Lexend Deca', sans-serif;
+          font-size: 24px;
+          font-weight: 600;
+        }
+
+        button {
+          display: flex;
+          align-items: center;
+          position: relative;
+          height: 40px;
+          width: 240px;
+
+          outline: 3px solid #976e56;
+          border: none;
+          cursor: pointer;
+          
+          .button-icon, .button-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            transition: all 0.3s;
+            overflow: hidden;
+            flex-shrink: 0;
+          }
+
+          .button-icon {
+            background-color: #e9e4df;
+            width: 40px;
+            padding: 4px;
+          }
+
+          .button-text {
+            background-color: #976e56;
+            color: #e9e4df;
+            width: 200px;
+            padding: 0 10px;
+            font-size: 22px;
+            font-weight: 600;
+          }
+
+          &:hover .button-icon {
+            width: 240px;
+          }
+
+          &:hover .button-text {
+            width: 0;
+            padding: 0;
+            opacity: 0;
+          }
+
+          &:not(:hover) .button-icon,
+          &:not(:hover) .button-text {
+            transition: all 0.6s ease-in-out;
+          }
+        }
+
+      }
+    }
+
+    .info-ocr, .info-memo, .info-analysis {
+      background-color: #bea996ba;
+      padding: 0 10px 5px 10px;
+
+      textarea {
+        background-color: #f6e6db;
         
         width: 100%;
-        min-height: 100px;
         padding: 10px;
-
-        border: 3px solid #875325;
+        border: none;
 
         font-size: 20px;
         font-family: 'Lexend Deca', sans-serif;
         resize: vertical;
 
-        &focus {
-          outline: none;
-          border: 3px solid #875325;
-          // box-shadow: 0 0 10px 0 rgba(135, 83, 37, 0.5);
+        &:focus {
+          background-color: #eac9a1;
+          outline: 2px solid #875325;
         }
-    }
+      }
     }
   }
 
   .notepad-board {
-    // background-color: #d5d5d5;
+    background: url('../assets/bg.svg') no-repeat center center;
+    background-size: cover;
+    
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -384,10 +517,7 @@ onMounted(() => {
       
     }
 
-
     .toolbar {
-      background: rgba(255, 255, 255, 0.15);
-
       display: flex;
       flex-direction: row;
       gap: 40px;
@@ -402,15 +532,16 @@ onMounted(() => {
       margin: 0 auto;
       padding: 10px 40px;
       
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      border-radius: 2rem;
-      backdrop-filter: blur(2px) saturate(180%);
-      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255, 255, 255, 0.3);
+      // border: 1px solid rgba(255, 255, 255, 0.8);
+      // border-radius: 2rem;
+      // backdrop-filter: blur(2px) saturate(180%);
+      // box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255, 255, 255, 0.3);
 
 
 
       button {
-        background-color: #f2bd87;
+        background-color: rgba(242, 171, 135, 0.15);
+        // background: rgba(255, 255, 255, 0.15);
 
         display: flex;
         align-items: center;
@@ -418,11 +549,19 @@ onMounted(() => {
         width: 70px;
         height: 70px;
 
-        border-radius: 50%;
-        border: 4px solid rgb(0, 0, 0);
+        border: 1px solid rgba(255, 255, 255, 0.8);
         border-radius: 2rem;
         backdrop-filter: blur(2px) saturate(180%);
-        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255, 255, 255, 0.3);
+        box-shadow: 
+          0 8px 32px rgba(31, 38, 135, 0.2), 
+          0 4px 4px rgba(135, 78, 31, 0.5), 
+          inset 0 4px 20px rgba(255, 255, 255, 0.3);
+
+        // border-radius: 50%;
+        // border: 4px solid rgb(0, 0, 0);
+        // border-radius: 2rem;
+        // backdrop-filter: blur(2px) saturate(180%);
+        // box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255, 255, 255, 0.3);
         
         cursor: pointer;
 
@@ -431,7 +570,7 @@ onMounted(() => {
         }
 
         &:disabled {
-          background-color: #979393;
+          background-color: rgb(151, 147, 148, 0.65);
           cursor: not-allowed;
           animation: none;
         }
@@ -440,9 +579,23 @@ onMounted(() => {
           color: #d77777;
           width: 70%;
           height: 70%;
+
+          filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.805));
         }
       }
     }
+  }
+
+  .img-zoom {
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    margin: 0 auto;
+    padding: 10px 0;
   }
 }
 

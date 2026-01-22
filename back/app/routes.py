@@ -5,6 +5,7 @@ from typing import Annotated
 from . import schemas, models
 from .database import get_db
 from .services.imgUpload import create_presigned_url
+from .services.imgOcr import ocr_google
 
 router = APIRouter()
 DB = Annotated[Session, Depends(get_db)]
@@ -113,12 +114,12 @@ def upload_image(extension: str):
 
 
 @router.post("/ocr", response_model=schemas.OcrResponse)
-def ocr(data: schemas.OcrRequest):
-    # TODO
-    pass
+def ocr_img(url: schemas.OcrRequest):
+    ocr = ocr_google(url.image_url)
+    return schemas.OcrResponse(ocr=ocr)
 
 
 @router.post("/analyze", response_model=schemas.AnalyzeResponse)
-def analyze(data: schemas.AnalyzeRequest):
+def analyze_note(data: schemas.AnalyzeRequest):
     # TODO
     pass

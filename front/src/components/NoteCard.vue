@@ -4,13 +4,13 @@
       <img :src="note.image_url" alt="note image">
     </div>
     <div v-if="note.ocr" class="note-card-ocr">
-      {{ note.ocr }}
+      {{ note.ocr.length > 100 ? note.ocr.substring(0, 50) + '...' : note.ocr }}
     </div>
     <div v-if="note.memo" class="note-card-memo">
-      {{ note.memo }}
+      {{ (note.memo.length > 80 && note.image_url) ? note.memo.substring(0, 80) + '...' : note.memo }}
     </div>
     <div v-if="note.analysis" class="note-card-analysis">
-      {{ note.analysis }}
+      {{ note.analysis.length > 300 ? note.analysis.substring(0, 100) + '...' : note.analysis }}
     </div>
   </div>
 </template>
@@ -22,16 +22,16 @@
 
 <style scoped lang="scss">
   .note-card {
+    width: 100%;
     background-color: #fff;
 
     display: flex;
     flex-direction: column;
     gap: 10px;
-    
 
-    aspect-ratio: 3/4;
+    min-width: 0;
+    height: 500px;
     padding: 20px;
-
     
     outline: 3px solid #875325;
     outline-offset: -3px;
@@ -50,21 +50,48 @@
       transition: all 0.3s cubic-bezier(0.65, 0, 0.076, 1);
     }
 
-    .note-card-img {
-        background-color: #e7e7e7;
-        width: 100%;
-        height: 150px;
-
-        
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-    }
-
-    .note-card-ocr, .note-card-memo, .note-card-analysis {
+    .note-card-img, .note-card-ocr, .note-card-memo, .note-card-analysis {
       width: 100%;
+      word-break: break-all;
     }
+
+    .note-card-img {
+      background-color: #e7e7e7;
+
+      height: 150px;
+
+      
+      img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+      }
+    }
+
+    .note-card-ocr {
+      background-color: #F7DED3;
+      font-size: 18px;
+      color: #333;
+      padding: 10px;
+    }
+    
+    .note-card-memo {
+      background-color: #EDD1B0;
+      font-size: 18px;
+      color: #333;
+      padding: 10px;
+    }
+    
+    .note-card-analysis {
+      flex: 1;
+      background-color: #e5d2bd;
+      font-size: 18px;
+      color: #333;
+      padding: 10px;
+      border-radius: 0 0 15px 15px;
+      min-width: 0;
+    }
+
+
   }
 </style>

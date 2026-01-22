@@ -2,8 +2,7 @@ import boto3
 import os
 import uuid
 from botocore.config import Config
-from dotenv import load_dotenv
-load_dotenv()
+
 
 s3_client = boto3.client(
     's3',

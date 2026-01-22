@@ -75,7 +75,8 @@ export async function uploadImage(file: File) {
 }
 
 export async function ocr(imageUrl: string) {
-  // TODO
+  const response = await api.post('/ocr', { image_url: imageUrl });
+  return response.data;
 }
 
 export async function analyze(data: object) {
