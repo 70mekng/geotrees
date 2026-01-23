@@ -4,3 +4,6 @@ python-multipart
 openai
 sqlalchemy
 pydantic
+boto3
+google-cloud-vision
+python-dotenv

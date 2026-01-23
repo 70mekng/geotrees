@@ -29,6 +29,7 @@
         </p> 
         <p>
           Picked up a few of these along the way while building this. I know I still have a lot to learn, but I'm a fast learner and genuinely excited about the opportunity to grow with your team.
+          (Mobile layout not yet optimized due to time constraints.)
         </p>
       </div>
     </div>
