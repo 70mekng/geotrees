@@ -14,10 +14,10 @@ class Note(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     notepad_id = Column(String, ForeignKey("notepads.id"), nullable=False)
-    image_url = Column(String, nullable=True)
-    ocr = Column(Text, nullable=True)
-    memo = Column(Text, nullable=True)
-    analysis = Column(Text, nullable=True)
+    image_url = Column(String)
+    ocr = Column(Text)
+    memo = Column(Text)
+    analysis = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     notepad = relationship("Notepad", back_populates="notes")
@@ -26,6 +26,6 @@ class Notepad(Base):
     __tablename__ = "notepads"
 
     id = Column(String, primary_key=True, default=generate_id)
-    all_analysis = Column(Text, nullable=True)
+    all_analysis = Column(Text, default="")
 
     notes = relationship("Note", back_populates="notepad", cascade="all, delete-orphan")

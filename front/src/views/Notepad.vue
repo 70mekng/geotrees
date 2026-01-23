@@ -67,7 +67,7 @@
           <h3>AI Analysis</h3>
           <button 
             @click="analyzeNote"
-            :disabled="!currentNote.ocr">
+            :disabled="!currentNote.ocr && !currentNote.image_url && !currentNote.memo">
             <img class="button-icon" src="../assets/icons/analyze.svg" alt="analyze">
             <span class="button-text">Click to analyze</span>
           </button>
@@ -75,7 +75,6 @@
         <textarea 
           v-model="currentNote.analysis"
           v-if="currentNote.analysis"
-          disabled
           placeholder="Click on analyze button to get analysis">
         </textarea>
       </div>
@@ -100,7 +99,9 @@
         <button @click="deleteNote">
           <img src="../assets/icons/delete.svg" alt="delete">
         </button>
-        <button><img src="../assets/icons/analyze_all.svg" alt="analyze all">
+        <button 
+          @click="notepad.all_analysis ? isAnalyzeAllDisplayed = true : analyzeNotepad()">
+          <img src="../assets/icons/analyze_all.svg" alt="analyze all">
         </button>
         <button @click="$router.push('/about')">
           <img src="../assets/icons/info.svg" alt="info">
@@ -113,6 +114,30 @@
       class="img-zoom"
       @click="isImgZoom = false">
       <img :src="currentNote.image_url" alt="note image">
+    </div>
+
+    <div 
+      v-if="isAnalyzeAllDisplayed"
+      class="all-result">
+      <div 
+        @click="isAnalyzeAllDisplayed = false"
+        class="overlay">
+      </div>
+      <div 
+        class="all-result-Dialog">
+        <div class="all-result-header">
+          <h3>Notepad analyzed result</h3>
+          <button @click="analyzeNotepad">Re-analyze</button>
+        </div>
+        <div class="all-result-content">
+          <div v-if="isAnalyzeAllLoading">
+            <span>Analyzing...</span>
+          </div>
+          <div v-else>
+            {{ notepad.all_analysis }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -142,17 +167,20 @@ const currentNote = ref<Note>({
 const originalNote = ref<Note | null>(null);
 const isUploadSelected = ref(false);
 const isImgZoom = ref(false);
+const isAnalyzeAllLoading = ref(false);
+const isAnalyzeAllDisplayed = ref(false);
 const isDirty = computed(() => {
   if (!currentNote.value) return false;
 
   if (!originalNote.value?.id) {
-    return !!(currentNote.value.image_url || currentNote.value.ocr || currentNote.value.memo);
+    return !!(currentNote.value.image_url || currentNote.value.ocr || currentNote.value.memo || currentNote.value.analysis );
   }
 
   return (
     currentNote.value.image_url !== originalNote.value.image_url ||
     currentNote.value.ocr !== originalNote.value.ocr ||
-    currentNote.value.memo !== originalNote.value.memo
+    currentNote.value.memo !== originalNote.value.memo ||
+    currentNote.value.analysis !== originalNote.value.analysis
   );
 });
 
@@ -178,10 +206,6 @@ async function loadNotepad() {
       console.error('error:', err)
     }
   }
-}
-
-async function analyzeNotepad(id: string) {
-  // TODO
 }
 
 function selectNote(note: Note) {
@@ -217,7 +241,6 @@ async function updateNote() {
       memo: currentNote.value.memo,
     });
     currentNote.value = newNote;
-    console.log('newNote', newNote);
     notepad.value?.notes.push(newNote);
   }
   // update note
@@ -294,8 +317,57 @@ async function ocrImage() {
   currentNote.value.ocr = data.ocr;
 }
 
-async function analyzeNote(data: object) {
-  // TODO
+async function analyzeNote() {
+  if (!currentNote.value.id) {
+    console.error('note id is null');
+    toast.error('The note id is blank. Please save the note first.');
+    return;
+  } 
+  if (!isDirty) {
+    toast.error('The note is changed. Please save the note first.');
+    return;
+  }
+
+  try {
+    currentNote.value.analysis = 'Analyzing...';
+    const response = await api.analyze(currentNote.value.id);
+    currentNote.value.analysis = response.analysis;
+  } catch (err) {
+    console.error('error:', err);
+    toast.error('Failed to analyze note');
+  }
+  const response = await api.analyze(currentNote.value.id);
+  if (!response.analysis) {
+    console.error('analysis is null');
+    toast.error('Failed to analyze note');
+    return;
+  }
+  currentNote.value.analysis = response.analysis;
+}
+
+async function analyzeNotepad() {
+  if (!notepadId) {
+    console.error('notepadId is null');
+    toast.error('Notepad id is blank. Please reload the page.');
+    return;
+  }
+  if (!isDirty) {
+    toast.error('Some notes may be changed. Please save the notes first.');
+    return;
+  }
+
+  isAnalyzeAllDisplayed.value = true;
+  isAnalyzeAllLoading.value = true;
+  try {
+    const result = await api.analyzeAll(notepadId);
+    console.log('result', result);
+    notepad.value.all_analysis = result.analysis;
+  } catch (err) {
+    console.error('error:', err);
+    toast.error('Failed to analyze notepad');
+  } finally {
+    isAnalyzeAllLoading.value = false;
+  }
 }
 
 onMounted(() => {
@@ -596,6 +668,77 @@ onMounted(() => {
     width: 100%;
     margin: 0 auto;
     padding: 10px 0;
+  }
+
+  .all-result {
+    // background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    margin: 0 auto;
+    padding: 10px 0;
+
+    .overlay {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .all-result-Dialog {
+      background-color: #f6e6db;
+
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 80%;
+      width: 80%;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+      
+      font-size: 24px;
+      font-family: 'Lexend Deca', sans-serif;
+
+      overflow-y: auto;
+      z-index: 1000;
+
+      .all-result-header {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+
+        button {
+          background-color: #d4946e;
+          color: #fff9f6;
+          height: 100%;
+          width: 200px;
+          padding: 0 10px;
+          font-size: 22px;
+          font-weight: 600;
+          
+          border: none;
+          cursor: pointer;
+
+          transition: all 0.3s;
+          
+          &:hover {
+            background-color: #d34d2e;
+          }
+        }
+      }
+
+      .all-result-content {
+        white-space: pre-line;
+        word-break: break-all;
+      }
+    }
   }
 }
 

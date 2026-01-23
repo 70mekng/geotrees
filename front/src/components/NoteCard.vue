@@ -3,15 +3,19 @@
     <div v-if="note.image_url" class="note-card-img">
       <img :src="note.image_url" alt="note image">
     </div>
-    <div v-if="note.ocr" class="note-card-ocr">
+    <!-- <div v-if="note.ocr" class="note-card-ocr">
       {{ note.ocr.length > 100 ? note.ocr.substring(0, 50) + '...' : note.ocr }}
     </div>
     <div v-if="note.memo" class="note-card-memo">
       {{ (note.memo.length > 80 && note.image_url) ? note.memo.substring(0, 80) + '...' : note.memo }}
     </div>
     <div v-if="note.analysis" class="note-card-analysis">
-      {{ note.analysis.length > 300 ? note.analysis.substring(0, 100) + '...' : note.analysis }}
+      {{ note.analysis.length > 120 ? note.analysis.substring(0, 120) + '...' : note.analysis }}
+    </div> -->
+    <div v-if="!note.image_url && note.memo" class="note-card-memo">
+      {{ (note.memo.length > 80 && note.image_url) ? note.memo.substring(0, 80) + '...' : note.memo }}
     </div>
+
   </div>
 </template>
 
@@ -30,7 +34,7 @@
     gap: 10px;
 
     min-width: 0;
-    height: 500px;
+    // height: 500px;
     padding: 20px;
     
     outline: 3px solid #875325;
@@ -51,14 +55,17 @@
     }
 
     .note-card-img, .note-card-ocr, .note-card-memo, .note-card-analysis {
+      height: 150px;
       width: 100%;
+      white-space: pre-line;
       word-break: break-all;
+
+      overflow: hidden;
     }
 
     .note-card-img {
       background-color: #e7e7e7;
-
-      height: 150px;
+      // height: 150px;
 
       
       img {
@@ -73,6 +80,8 @@
       font-size: 18px;
       color: #333;
       padding: 10px;
+
+      max-height: 100px;
     }
     
     .note-card-memo {

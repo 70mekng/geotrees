@@ -5,6 +5,7 @@ from google.oauth2 import service_account
 
 def ocr_google(image_url: str):
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    print(f"credentials_path: {credentials_path}") 
     credentials = service_account.Credentials.from_service_account_file(credentials_path)
     
     client = vision.ImageAnnotatorClient(credentials=credentials)

@@ -5,9 +5,9 @@ from datetime import datetime
 class NoteResponse(BaseModel):
     id: int
     notepad_id: str
-    image_url: str | None = None
-    ocr: str | None = None
-    memo: str | None = None
+    image_url: str
+    ocr: str
+    memo: str
     analysis: str | None = None
     created_at: datetime
 
@@ -15,15 +15,15 @@ class NoteResponse(BaseModel):
         from_attributes = True
 
 class NoteCreate(BaseModel):
-    image_url: str | None = None
-    ocr: str | None = None
-    memo: str | None = None
+    image_url: str
+    ocr: str
+    memo: str
 
 class NoteUpdate(BaseModel):
-    image_url: str | None = None
-    ocr: str | None = None
-    memo: str | None = None
-    analysis: str | None = None
+    image_url: str
+    ocr: str
+    memo: str
+    analysis: str
 
 class NotepadResponse(BaseModel):
     id: str
@@ -32,7 +32,6 @@ class NotepadResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 # functions
 class UploadResponse(BaseModel):
@@ -45,10 +44,9 @@ class OcrRequest(BaseModel):
 class OcrResponse(BaseModel):
     ocr: str
 
-class AnalyzeRequest(BaseModel):
-    image_url: str | None = None
-    ocr: str | None = None
-    memo: str | None = None
+# Analyze
+class noteAnalyzeResponse(BaseModel):
+    analysis: str
 
-class AnalyzeResponse(BaseModel):
+class notepadAnalyzeResponse(BaseModel):
     analysis: str

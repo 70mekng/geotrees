@@ -38,20 +38,15 @@ export async function deleteNote(noteId: string) {
 }
 
 // Notepad
-export async function createNotepad(): Promise<Notepad> {
+export async function createNotepad() {
   const response = await api.post('/notepad');
   return response.data;
 }
 
-export async function getNotepad(id: string): Promise<Notepad> {
-  const response = await api.get(`/notepad/${id}`);
+export async function getNotepad(notepadId: string) {
+  const response = await api.get(`/notepad/${notepadId}`);
   return response.data;
 }
-
-export async function analyzeNotepad(id: string) {
-  // TODO
-}
-
 
 // functions
 export async function uploadImage(file: File) {
@@ -79,6 +74,12 @@ export async function ocr(imageUrl: string) {
   return response.data;
 }
 
-export async function analyze(data: object) {
-  // TODO
+export async function analyze(noteId: string) {
+  const response = await api.post(`/note/${noteId}/analyze`);
+  return response.data;
+}
+
+export async function analyzeAll(notepadId: string) {
+  const response = await api.post(`/notepad/${notepadId}/analyze`);
+  return response.data;
 }
