@@ -314,6 +314,7 @@ async function ocrImage() {
     return;
   }
   const data = await api.ocr(currentNote.value.image_url);
+  console.log('ocr data', data);
   currentNote.value.ocr = data.ocr;
 }
 

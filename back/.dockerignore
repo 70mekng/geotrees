@@ -1,0 +1,9 @@
+.env
+.git
+.gitignore
+__pycache__
+*.pyc
+*.db
+tests
+venv
+google-credentials.json
